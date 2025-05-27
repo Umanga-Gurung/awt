@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quotes</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; }
+    .error { color: red; }
+    input, button { padding: 8px; margin-top: 10px; display: block; width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>Quote List</h1>
+  <div id="loading">Loading...</div>
+  <ul id="quote-list"></ul>
+  <p class="error" id="error-msg"></p>
+
+  <h2>Add a Quote</h2>
+  <input type="text" id="author" placeholder="Author" />
+  <input type="text" id="content" placeholder="Quote" />
+  <button onclick="addQuote()">Submit</button>
+
+  <script>
+    const quoteList = document.getElementById('quote-list');
+    const loading = document.getElementById('loading');
+    const errorMsg = document.getElementById('error-msg');
+
+    function loadQuotes() {
+      fetch('/api/quotes')
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to fetch quotes");
+          return res.json();
+        })
+        .then(data => {
+          loading.style.display = 'none';
+          quoteList.innerHTML = '';
+          data.forEach(q => {
+            const li = document.createElement('li');
+            li.textContent = `"${q.text}" — ${q.author}`;
+            quoteList.appendChild(li);
+          });
+        })
+        .catch(err => {
+          loading.style.display = 'none';
+          errorMsg.textContent = 'Could not load quotes. Try again later.';
+          console.error(err);
+        });
+    }
+
+    function addQuote() {
+      const author = document.getElementById('author').value;
+      const content = document.getElementById('content').value;
+
+      fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author, content })
+      })
+      .then(res => res.json())
+      .then(() => {
+        document.getElementById('author').value = '';
+        document.getElementById('content').value = '';
+        loadQuotes();
+      })
+      .catch(err => {
+        errorMsg.textContent = 'Could not add quote.';
+        console.error(err);
+      });
+    }
+
+    loadQuotes();
+  </script>
+</body>
+</html>
